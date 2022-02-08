@@ -3,7 +3,8 @@ import curses
 from random import shuffle
 
 DEFAULT_SYMBOLS = 'XOLGBTIQ'
-LINE = {-1: ' ', 0: ' ', 1: ' '}
+BLANK = ' '
+LINE = {-1: BLANK, 0: BLANK, 1: BLANK}
 
 class InvalidDimensionException():
  pass
@@ -20,21 +21,52 @@ class ToeGame():
   self.y_offset = 0
   self.pos = []
 
- def setup_grid(self, dimensions, x_offset, y_offset):
+ @property
+ def center(self):
+  return [self.y_offset, self.x_offset]
+
+ @property
+ def cursor(self):
+  cursor = self.center
+  if self.dimensions == 0: return cursor
+  cursor[0] = cursor[0] + 2 * self.pos[0]
+  if self.dimensions == 0: return cursor
+  # TODO: Add higher dimensions
+  return cursor
+
+ @property
+ def player_symbol(self):
+  return self.symbols[self.player]
+
+ @player_symbol.setter
+ def player_symbol(self, value):
+  self.symbols[self.player] = chr(value)
+
+ def setup_grid(self, dimensions, y_offset, x_offset):
   self.dimensions = dimensions
-  self.x_offset = x_offset
   self.y_offset = y_offset
+  self.x_offset = x_offset
   self.pos = [0] * max(2, dimensions)
   if dimensions < 4:
    self.setup_players(dimensions)
    if dimensions == 0:
-    self.grid = [' ']
+    self.grid = [BLANK]
    elif dimensions == 1:
     self.grid = LINE.copy()
 
  def setup_players(self, players):
   self.players = players
-  self.symbols = list(' ' * players)
+  self.symbols = list(BLANK * players)
+
+ def apply_movement(self, key):
+  # TODO: Support movement at edges to support higher dimensions
+  if key == curses.KEY_UP:
+   self.pos[0] = max(self.pos[0] - 1, -1)
+   return None
+  elif key == curses.KEY_DOWN:
+   self.pos[0] = min(self.pos[0] + 1, 1)
+   return None
+  return key
  
  def input_turn(self, stdscr):
   stdscr.refresh()
@@ -45,33 +77,20 @@ class ToeGame():
    stdscr.getch()
    return
   key = None
-  while not key:
+  while not key or self.player_symbol == BLANK:
    key = stdscr.getch()
-   if self.symbols[self.player] == ' ' and chr(key).isprintable():
-    self.symbols[self.player] = key
-   if key == curses.KEY_LEFT:
-    self.pos[0] = max(self.pos[0] - 1, -1)
-    key = None
-   elif key == curses.KEY_RIGHT:
-    self.pos[0] = min(self.pos[0] + 1, 1)
-    key = None
-   elif self.dimensions > 1:
-    if key == curses.KEY_UP:
-     self.pos[1] = max(self.pos[1] - 1, -1)
-     key = None
-    elif key == curses.KEY_DOWN:
-     self.pos[1] = min(self.pos[1] + 1, 1)
-     key = None
+   if self.player_symbol == BLANK and chr(key).isprintable():
+    self.player_symbol = key
+   key = self.apply_movement(key)
    stdscr.move(1 + self.y_offset + self.pos[1] * 2, 
     1 + self.x_offset + self.pos[0] * 2)
-  self.grid[self.pos[0]] = chr(key)
-
-     
+  self.grid[self.pos[0]] = self.player_symbol
+  self.player = (self.player + 1) % self.players
 
  def check_win(self):
   if self.dimensions == 0:
    return self.grid[0]
-  elif self.dimensions == 1 and len(set(self.grid)) == 1:
+  elif self.dimensions == 1 and len(set(self.grid.values())) == 1:
    return self.grid[0]
   # TODO: Check for line through any dimensional pathway 
   return None
@@ -89,16 +108,17 @@ class ToeGame():
 
  def print_grid_1(self, stdscr):
   stdscr.addstr(self.y_offset, self.x_offset, '_' * (1 + 2 * 3))
-  stdscr.addstr(1 + self.y_offset, self.x_offset,
-   '|' + ''.join([f'{self.grid[i]}|' for i in range(-1,2)]))
-  stdscr.addstr(2 + self.y_offset, self.x_offset, '-' * (1 + 2 * 3))
+  for i in range(-1, 2):
+   stdscr.addstr(i * 2 + self.y_offset, self.x_offset, f'|{self.grid[i]}|')
+   stdscr.addstr(i * 2 + self.y_offset + 1, self.x_offset, '-' * (1 + 2 * 3))
   
 def main(stdscr):
  game = ToeGame()
- game.setup_grid(0, 2, 1)
+ game.setup_grid(0, 8, 8)
  victor = None
  while victor == None:
   stdscr.clear()
+  stdscr.addstr(0, 0, str(game.grid))
   game.input_turn(stdscr)
   victor = game.check_win()
  game.print_grid(stdscr)
