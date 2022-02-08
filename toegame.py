@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 
-from random import shuffle
+from random import choice
 from math import floor
 import curses
 
-DEFAULT_SYMBOLS = 'XOLGBTIQ'
+DEFAULT_SYMBOLS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 BLANK = ' '
 LINE = {-1: BLANK, 0: BLANK, 1: BLANK}
 
@@ -51,7 +51,12 @@ class ToeGame():
 
  @player_symbol.setter
  def player_symbol(self, value):
-  self.symbols[self.player] = chr(value)
+  symbol = chr(value)
+  if symbol == BLANK or not symbol.isprintable():
+   symbol = choice(DEFAULT_SYMBOLS)
+  while symbol in self.symbols:
+   symbol = choice(DEFAULT_SYMBOLS)
+  self.symbols[self.player] = symbol
 
  @property
  def grid_symbol(self):
@@ -113,7 +118,7 @@ class ToeGame():
    key = stdscr.getch()
    key = self.apply_movement(key)
    self.move_to_cursor(stdscr)
-   if self.player_symbol == BLANK and key != None and chr(key).isprintable():
+   if self.player_symbol == BLANK and key != None:
     self.player_symbol = key
   self.grid_symbol = self.player_symbol
   self.player = (self.player + 1) % self.players
@@ -158,7 +163,7 @@ class ToeGame():
   
 def main(stdscr):
  game = ToeGame()
- game.setup_grid(2, 20, 10)
+ game.setup_grid(1, 20, 10)
  victor = None
  while victor == None:
   stdscr.clear()
