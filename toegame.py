@@ -1,6 +1,8 @@
 #!/usr/bin/python3
-import curses
+
 from random import shuffle
+from math import floor
+import curses
 
 DEFAULT_SYMBOLS = 'XOLGBTIQ'
 BLANK = ' '
@@ -30,7 +32,9 @@ class ToeGame():
   cursor = self.center
   if self.dimensions == 0: return cursor
   cursor[1] = cursor[1] + 2 * self.pos[0]
-  if self.dimensions == 0: return cursor
+  if self.dimensions == 1: return cursor
+  cursor[0] = cursor[0] + 4 * self.pos[1]
+  if self.dimensions == 2: return cursor
   # TODO: Add higher dimensions
   return cursor
 
@@ -85,8 +89,10 @@ class ToeGame():
    self.pos[0] = min(self.pos[0] + 1, 1)
    return None
   elif key == curses.KEY_LEFT:
+   self.pos[1] = max(self.pos[1] - 1, -1)
    return None
   elif key == curses.KEY_RIGHT:
+   self.pos[1] = min(self.pos[1] + 1, 1)
    return None
   return key
  
@@ -118,8 +124,13 @@ class ToeGame():
  def print_grid(self, stdscr):
   if self.dimensions == 0:
    self.print_grid_0(stdscr)
+   return
   if self.dimensions == 1:
    self.print_grid_1(stdscr)
+   return
+  if self.dimensions == 2:
+   self.print_grid_2(stdscr)
+   return
 
  def print_grid_0(self, stdscr):
   center = self.center
@@ -132,13 +143,17 @@ class ToeGame():
   for offset in self.grid:
    x = center[0]
    y = center[1] + 2 * offset
+   cell = f'| {self.grid[offset]} |'
    stdscr.addstr(y - 1, x - 1, '-' * 3)
-   stdscr.addstr(y, x - 1, f'|{self.grid[offset]}|')
+   stdscr.addstr(y, x - floor(len(cell) / 2), cell)
    stdscr.addstr(y + 1, x - 1, '-' * 3)
+
+ def print_grid_2(self, stdscr):
+  pass
   
 def main(stdscr):
  game = ToeGame()
- game.setup_grid(1, 20, 10)
+ game.setup_grid(2, 20, 10)
  victor = None
  while victor == None:
   stdscr.clear()
