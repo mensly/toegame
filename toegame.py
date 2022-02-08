@@ -41,7 +41,9 @@ class ToeGame():
  @property
  def player_turn(self):
   if self.dimensions == 0: return BLANK
-  return self.player_symbol or 'NEW'
+  turn = self.player_symbol
+  if turn == BLANK: return 'NEW'
+  return turn
 
  @property
  def player_symbol(self):
@@ -69,12 +71,15 @@ class ToeGame():
   self.x_offset = x_offset
   self.y_offset = y_offset
   self.pos = [0] * dimensions
-  if dimensions < 4:
-   self.setup_players(dimensions)
-   if dimensions == 0:
-    self.grid = [BLANK]
-   elif dimensions == 1:
-    self.grid = LINE.copy()
+  self.setup_players(dimensions)
+  if dimensions == 0:
+   self.grid = [BLANK]
+   return
+  self.grid = LINE.copy()
+  for d in range(2, dimensions + 1):
+   self.grid = {-1: self.grid.copy(),
+                 0: self.grid.copy(),
+                 1: self.grid.copy()}
 
  def setup_players(self, players):
   self.players = players
