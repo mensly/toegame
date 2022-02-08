@@ -83,9 +83,9 @@ class ToeGame():
    self.print_grid_1(stdscr)
 
  def print_grid_0(self, stdscr):
-  stdscr.addstr(self.y_offset, self.x_offset, '_' * 3)
-  stdscr.addstr(1 + self.y_offset, self.x_offset, f'|{self.grid[0]}|')
-  stdscr.addstr(2 + self.y_offset, self.x_offset, '-' * 3)
+  stdscr.addstr(2 + self.y_offset, 2 + self.x_offset, '_' * 3)
+  stdscr.addstr(3 + self.y_offset, 2 + self.x_offset, f'|{self.grid[0]}|')
+  stdscr.addstr(4 + self.y_offset, 2 + self.x_offset, '-' * 3)
 
  def print_grid_1(self, stdscr):
   stdscr.addstr(self.y_offset, self.x_offset, '_' * (1 + 2 * 3))
@@ -95,7 +95,7 @@ class ToeGame():
   
 def main(stdscr):
  game = ToeGame()
- game.setup_grid(1, 2, 1)
+ game.setup_grid(0, 2, 1)
  victor = None
  while victor == None:
   stdscr.clear()
