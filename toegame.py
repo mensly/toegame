@@ -6,7 +6,7 @@ DEFAULT_SYMBOLS = 'XOLGBTIQ'
 BLANK = ' '
 LINE = {-1: BLANK, 0: BLANK, 1: BLANK}
 
-class InvalidDimensionException():
+class InvalidDimensionException(BaseException):
  pass
 
 class ToeGame():
@@ -23,16 +23,21 @@ class ToeGame():
 
  @property
  def center(self):
-  return [self.y_offset, self.x_offset]
+  return [self.x_offset, self.y_offset]
 
  @property
  def cursor(self):
   cursor = self.center
   if self.dimensions == 0: return cursor
-  cursor[0] = cursor[0] + 2 * self.pos[0]
+  cursor[1] = cursor[1] + 2 * self.pos[0]
   if self.dimensions == 0: return cursor
   # TODO: Add higher dimensions
   return cursor
+
+ @property
+ def player_turn(self):
+  if self.dimensions == 0: return BLANK
+  return self.player_symbol or 'NEW'
 
  @property
  def player_symbol(self):
@@ -42,11 +47,24 @@ class ToeGame():
  def player_symbol(self, value):
   self.symbols[self.player] = chr(value)
 
- def setup_grid(self, dimensions, y_offset, x_offset):
+ @property
+ def grid_symbol(self):
+  return self.grid[self.pos[0]] # TODO: Higher dimensions
+
+ @grid_symbol.setter
+ def grid_symbol(self, value):
+  self.grid[self.pos[0]] = value
+
+ def move_to_cursor(self, stdscr):
+  cursor = self.cursor
+  stdscr.move(cursor[1], cursor[0])
+
+ def setup_grid(self, dimensions, x_offset, y_offset):
+  if dimensions < 0: raise InvalidDimensionException()
   self.dimensions = dimensions
-  self.y_offset = y_offset
   self.x_offset = x_offset
-  self.pos = [0] * max(2, dimensions)
+  self.y_offset = y_offset
+  self.pos = [0] * dimensions
   if dimensions < 4:
    self.setup_players(dimensions)
    if dimensions == 0:
@@ -66,25 +84,27 @@ class ToeGame():
   elif key == curses.KEY_DOWN:
    self.pos[0] = min(self.pos[0] + 1, 1)
    return None
+  elif key == curses.KEY_LEFT:
+   return None
+  elif key == curses.KEY_RIGHT:
+   return None
   return key
  
  def input_turn(self, stdscr):
   stdscr.refresh()
   self.print_grid(stdscr)
-  stdscr.move(1 + self.y_offset + (self.pos[1] + 1) * 2, 
-   1 + self.x_offset + (self.pos[0] + 1) * 2)
+  self.move_to_cursor(stdscr)
   if self.dimensions == 0:
    stdscr.getch()
    return
   key = None
-  while not key or self.player_symbol == BLANK:
+  while not key or self.player_symbol == BLANK or self.grid_symbol != BLANK:
    key = stdscr.getch()
-   if self.player_symbol == BLANK and chr(key).isprintable():
-    self.player_symbol = key
    key = self.apply_movement(key)
-   stdscr.move(1 + self.y_offset + self.pos[1] * 2, 
-    1 + self.x_offset + self.pos[0] * 2)
-  self.grid[self.pos[0]] = self.player_symbol
+   self.move_to_cursor(stdscr)
+   if self.player_symbol == BLANK and key != None and chr(key).isprintable():
+    self.player_symbol = key
+  self.grid_symbol = self.player_symbol
   self.player = (self.player + 1) % self.players
 
  def check_win(self):
@@ -102,23 +122,27 @@ class ToeGame():
    self.print_grid_1(stdscr)
 
  def print_grid_0(self, stdscr):
-  stdscr.addstr(2 + self.y_offset, 2 + self.x_offset, '_' * 3)
-  stdscr.addstr(3 + self.y_offset, 2 + self.x_offset, f'|{self.grid[0]}|')
-  stdscr.addstr(4 + self.y_offset, 2 + self.x_offset, '-' * 3)
+  center = self.center
+  stdscr.addstr(center[1] - 1, center[0] - 1, '-' * 3)
+  stdscr.addstr(center[1], center[0] - 1, f'|{self.grid[0]}|')
+  stdscr.addstr(center[1] + 1, center[0] - 1, '-' * 3)
 
  def print_grid_1(self, stdscr):
-  stdscr.addstr(self.y_offset, self.x_offset, '_' * (1 + 2 * 3))
-  for i in range(-1, 2):
-   stdscr.addstr(i * 2 + self.y_offset, self.x_offset, f'|{self.grid[i]}|')
-   stdscr.addstr(i * 2 + self.y_offset + 1, self.x_offset, '-' * (1 + 2 * 3))
+  center = self.center
+  for offset in self.grid:
+   x = center[0]
+   y = center[1] + 2 * offset
+   stdscr.addstr(y - 1, x - 1, '-' * 3)
+   stdscr.addstr(y, x - 1, f'|{self.grid[offset]}|')
+   stdscr.addstr(y + 1, x - 1, '-' * 3)
   
 def main(stdscr):
  game = ToeGame()
- game.setup_grid(0, 8, 8)
+ game.setup_grid(1, 20, 10)
  victor = None
  while victor == None:
   stdscr.clear()
-  stdscr.addstr(0, 0, str(game.grid))
+  stdscr.addstr(0, 0, f'Player: {game.player_turn}')
   game.input_turn(stdscr)
   victor = game.check_win()
  game.print_grid(stdscr)
