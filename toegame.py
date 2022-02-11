@@ -60,7 +60,7 @@ class ToeGame():
 
  @property
  def grid_symbol(self):
-  return self.grid[self.pos[0]] # TODO: Higher dimensions
+  return self.grid[self.pos[0]]
 
  @grid_symbol.setter
  def grid_symbol(self, value):
@@ -136,6 +136,7 @@ class ToeGame():
    return self.grid[0]
   elif self.dimensions == 1 and len(set(self.grid.values())) == 1:
    return self.grid[0]
+   # TODO: 2D
   # TODO: Check for line through any dimensional pathway 
   return None
   
@@ -169,11 +170,16 @@ class ToeGame():
    self.draw_cell(stdscr, [x, y], self.grid[offset])
 
  def print_grid_2(self, stdscr):
-  pass
+  center = self.center
+  for dx in self.grid:
+   for dy in self.grid[dx]:
+    x = center[0] + 4 * dx
+    y = center[1] + 2 * dy
+    self.draw_cell(stdscr, [x, y], self.grid[dx][dy])
   
 def main(stdscr):
  game = ToeGame()
- game.setup_grid(1, 20, 10)
+ game.setup_grid(2, 20, 10)
  victor = None
  while victor == None:
   stdscr.clear()
