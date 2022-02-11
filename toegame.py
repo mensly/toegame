@@ -30,12 +30,12 @@ class ToeGame():
  @property
  def cursor(self):
   cursor = self.center
-  if self.dimensions == 0: return cursor
-  cursor[1] = cursor[1] + 2 * self.pos[0]
-  if self.dimensions == 1: return cursor
-  cursor[0] = cursor[0] + 4 * self.pos[1]
-  if self.dimensions == 2: return cursor
-  # TODO: Add higher dimensions
+  offset = 1
+  cursor_dim = 0
+  for d in range(self.dimensions):
+   offset = 2 * offset
+   cursor_dim = (cursor_dim + 1) % len(cursor)
+   cursor[cursor_dim] = cursor[cursor_dim] + offset * self.pos[d]
   return cursor
 
  @property
@@ -90,21 +90,29 @@ class ToeGame():
   self.players = players
   self.symbols = list(BLANK * players)
 
- def apply_movement(self, key):
-  # TODO: Support movement at edges to support higher dimensions
+ def apply_input(self, key):
   if key == curses.KEY_UP:
-   self.pos[0] = max(self.pos[0] - 1, -1)
+   self.apply_movement(0, -1)
    return None
   elif key == curses.KEY_DOWN:
-   self.pos[0] = min(self.pos[0] + 1, 1)
+   self.apply_movement(0, 1)
    return None
   elif key == curses.KEY_LEFT:
-   self.pos[1] = max(self.pos[1] - 1, -1)
+   self.apply_movement(1, -1)
    return None
   elif key == curses.KEY_RIGHT:
-   self.pos[1] = min(self.pos[1] + 1, 1)
+   self.apply_movement(1, -1)
    return None
   return key
+  
+ def apply_movement(self, dimension, direction):
+  while dimension < len(self.pos):
+   self.pos[dimension] = self.pos[dimension] + direction
+   if abs(self.pos[dimension]) <= 1:
+    return
+   else:
+    self.pos[dimension] = max(-1, min(self.pos[dimension], 1))
+   dimension = dimension + 2
  
  def input_turn(self, stdscr):
   stdscr.refresh()
@@ -116,7 +124,7 @@ class ToeGame():
   key = None
   while not key or self.player_symbol == BLANK or self.grid_symbol != BLANK:
    key = stdscr.getch()
-   key = self.apply_movement(key)
+   key = self.apply_input(key)
    self.move_to_cursor(stdscr)
    if self.player_symbol == BLANK and key != None:
     self.player_symbol = key
@@ -176,7 +184,3 @@ def main(stdscr):
 if __name__ == '__main__':
  victor = curses.wrapper(main)
  print(f'Game Over, Congratulations {victor}')
- 
-
-
- 
