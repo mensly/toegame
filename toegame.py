@@ -101,7 +101,7 @@ class ToeGame():
    self.apply_movement(1, -1)
    return None
   elif key == curses.KEY_RIGHT:
-   self.apply_movement(1, -1)
+   self.apply_movement(1, 1)
    return None
   return key
   
@@ -150,21 +150,23 @@ class ToeGame():
    self.print_grid_2(stdscr)
    return
 
+ def draw_cell(self, stdscr, center, symbol):
+   x = center[0]
+   y = center[1]
+   cell = f'| {symbol} |'
+   stdscr.addstr(y - 1, x - 1, '-' * 3)
+   stdscr.addstr(y, x - floor(len(cell) / 2), cell)
+   stdscr.addstr(y + 1, x - 1, '-' * 3)
+  
  def print_grid_0(self, stdscr):
-  center = self.center
-  stdscr.addstr(center[1] - 1, center[0] - 1, '-' * 3)
-  stdscr.addstr(center[1], center[0] - 1, f'|{self.grid[0]}|')
-  stdscr.addstr(center[1] + 1, center[0] - 1, '-' * 3)
+  self.draw_cell(stdscr, self.center, self.grid[0])
 
  def print_grid_1(self, stdscr):
   center = self.center
   for offset in self.grid:
    x = center[0]
    y = center[1] + 2 * offset
-   cell = f'| {self.grid[offset]} |'
-   stdscr.addstr(y - 1, x - 1, '-' * 3)
-   stdscr.addstr(y, x - floor(len(cell) / 2), cell)
-   stdscr.addstr(y + 1, x - 1, '-' * 3)
+   self.draw_cell(stdscr, [x, y], self.grid[offset])
 
  def print_grid_2(self, stdscr):
   pass
@@ -184,3 +186,4 @@ def main(stdscr):
 if __name__ == '__main__':
  victor = curses.wrapper(main)
  print(f'Game Over, Congratulations {victor}')
+ 
